@@ -6,6 +6,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// For debugging AsyncStorage
+const logAsyncStorageContent = async () => {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    console.log('All AsyncStorage keys:', allKeys);
+    
+    for (const key of allKeys) {
+      const value = await AsyncStorage.getItem(key);
+      console.log(`${key}:`, value);
+    }
+  } catch (error) {
+    console.error('Error logging AsyncStorage content:', error);
+  }
+};
+
 export default function App() {
   const [userInfo, setUserInfo] = useState(null)
   const [email, setEmail] = useState('');
@@ -25,10 +40,13 @@ export default function App() {
 
   useEffect(() => {
     checkLocalUser();
+    // Log AsyncStorage content for debugging
+    logAsyncStorageContent();
   }, []);
 
   useEffect(() => {
     if (response?.type === "success") {
+      console.log("Google auth success response:", response);
       setToken(response.authentication.accessToken);
       getUserInfo(response.authentication.accessToken);
     }
@@ -36,9 +54,13 @@ export default function App() {
 
   const checkLocalUser = async () => {
     try {
+      console.log("Checking for local user...");
       const user = await getLocalUser();
       if (user) {
+        console.log("Found local user:", user);
         setUserInfo(user);
+      } else {
+        console.log("No local user found");
       }
     } catch (error) {
       console.error("Error retrieving user data from AsyncStorage:", error);
@@ -47,6 +69,7 @@ export default function App() {
 
   const signInWithGoogle = async () => {
     try {
+      console.log("Attempting Google sign in...");
       setIsLoading(true);
       await promptAsync();
     } catch (error) {
@@ -58,35 +81,49 @@ export default function App() {
   };
   
   const getLocalUser = async () => {
-    const data = await AsyncStorage.getItem("user");
-    if (!data) return null;
-    return JSON.parse(data);
+    try {
+      const data = await AsyncStorage.getItem("user");
+      console.log("Raw user data from AsyncStorage:", data);
+      if (!data) return null;
+      return JSON.parse(data);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      return null;
+    }
   };
 
   const getUserInfo = async (token) => {
     // no token
-    if (!token) return;
+    if (!token) {
+      console.log("No token provided to getUserInfo");
+      return;
+    }
 
     // token
     try {
+      console.log("Fetching user info with token");
       const response = await fetch(
         "https://www.googleapis.com/userinfo/v2/me",
         {
           headers: {Authorization: `Bearer ${token}`},
         }
       );
+      
+      if (!response.ok) {
+        console.error("Google API response not OK:", response.status, response.statusText);
+        return;
+      }
+      
       const user = await response.json();
+      console.log("Received user info from Google:", user);
+      
       // store user info in aysncstorage
+      user.auth_type = "google"; // Add auth type for Google users
       await AsyncStorage.setItem("user", JSON.stringify(user));
       setUserInfo(user);
     } catch (error) {
-      console.error(
-        "Failed to fetch user data:",
-        response.status,
-        response.statusText
-      );
+      console.error("Failed to fetch user data:", error);
     }
-    
   };
 
   // New functions for email/password authentication
@@ -99,37 +136,38 @@ export default function App() {
 
   // Sign in with email and password
   const signInWithEmailPassword = async () => {
+    console.log("Attempting email/password sign in with:", { email });
     try {
       setIsLoading(true);
       
       // Basic validation
       if (!email || !password) {
+        console.log("Missing email or password");
         Alert.alert("Error", "Please enter both email and password");
         return;
       }
 
       if (!isValidEmail(email)) {
+        console.log("Invalid email format");
         Alert.alert("Error", "Please enter a valid email address");
         return;
       }
 
-      // In a real app, you would make an API call to authenticate
-      // For demo purposes, we'll simulate authentication with hardcoded credentials
-      // and AsyncStorage
-      
       // Check if user exists in AsyncStorage (simulating a database)
       const storedUsers = await AsyncStorage.getItem("emailUsers");
+      console.log("Retrieved emailUsers from AsyncStorage:", storedUsers);
       const users = storedUsers ? JSON.parse(storedUsers) : {};
       
       if (users[email] && users[email].password === password) {
         // Successfully authenticated
+        console.log("Authentication successful for:", email);
         const user = {
           name: users[email].name || email.split('@')[0],
           email: email,
-          // You might want to add other properties as needed
           auth_type: "email"
         };
         
+        console.log("Setting user data in AsyncStorage:", user);
         await AsyncStorage.setItem("user", JSON.stringify(user));
         setUserInfo(user);
         setEmail('');
@@ -137,6 +175,7 @@ export default function App() {
         
         Alert.alert("Success", "You have successfully signed in!");
       } else {
+        console.log("Invalid credentials. Available users:", Object.keys(users));
         Alert.alert("Error", "Invalid email or password");
       }
     } catch (error) {
@@ -149,30 +188,36 @@ export default function App() {
 
   // Sign up with email and password (for demo purposes)
   const signUpWithEmailPassword = async () => {
+    console.log("Attempting to sign up with:", { email });
     try {
       setIsLoading(true);
       
       // Basic validation
       if (!email || !password) {
+        console.log("Missing email or password for signup");
         Alert.alert("Error", "Please enter both email and password");
         return;
       }
 
       if (!isValidEmail(email)) {
+        console.log("Invalid email format for signup");
         Alert.alert("Error", "Please enter a valid email address");
         return;
       }
 
       if (password.length < 6) {
+        console.log("Password too short for signup");
         Alert.alert("Error", "Password must be at least 6 characters long");
         return;
       }
 
       // Check if user already exists
       const storedUsers = await AsyncStorage.getItem("emailUsers");
+      console.log("Retrieved emailUsers for signup:", storedUsers);
       const users = storedUsers ? JSON.parse(storedUsers) : {};
       
       if (users[email]) {
+        console.log("Email already registered:", email);
         Alert.alert("Error", "Email already registered. Please sign in.");
         return;
       }
@@ -183,6 +228,7 @@ export default function App() {
         name: email.split('@')[0] // Simple way to extract a name from email
       };
       
+      console.log("Storing updated users in AsyncStorage:", users);
       await AsyncStorage.setItem("emailUsers", JSON.stringify(users));
       
       // Auto-login after signup
@@ -192,6 +238,7 @@ export default function App() {
         auth_type: "email"
       };
       
+      console.log("Setting new user in AsyncStorage for auto-login:", user);
       await AsyncStorage.setItem("user", JSON.stringify(user));
       setUserInfo(user);
       setEmail('');
@@ -208,23 +255,28 @@ export default function App() {
 
   // Reset password functionality
   const handleForgotPassword = () => {
+    console.log("Showing password reset form");
     setShowResetForm(true);
   };
 
   const sendPasswordResetEmail = async () => {
+    console.log("Attempting to reset password for:", resetEmail);
     try {
       setIsLoading(true);
       
       if (!resetEmail || !isValidEmail(resetEmail)) {
+        console.log("Invalid reset email");
         Alert.alert("Error", "Please enter a valid email address");
         return;
       }
 
       // Check if the user exists
       const storedUsers = await AsyncStorage.getItem("emailUsers");
+      console.log("Retrieved emailUsers for password reset:", storedUsers);
       const users = storedUsers ? JSON.parse(storedUsers) : {};
       
       if (!users[resetEmail]) {
+        console.log("No account found for reset email:", resetEmail);
         Alert.alert("Error", "No account found with this email");
         return;
       }
@@ -234,6 +286,7 @@ export default function App() {
       const newPassword = "resetpass";
       users[resetEmail].password = newPassword;
       
+      console.log("Updating user password in AsyncStorage");
       await AsyncStorage.setItem("emailUsers", JSON.stringify(users));
       
       Alert.alert(
@@ -253,6 +306,7 @@ export default function App() {
 
   const logout = async () => {
     try {
+      console.log("Logging out user");
       // clear asyncStorage
       await AsyncStorage.removeItem("user");
       setUserInfo(null);
@@ -264,6 +318,15 @@ export default function App() {
       console.error ("Error logging out:", error);
     }
   };
+
+  // Print debug info
+  console.log("Current state:", { 
+    isUserLoggedIn: !!userInfo, 
+    email, 
+    password: password ? "***" : "", 
+    isLoading, 
+    showResetForm 
+  });
 
   return (
     <View style={styles.container}>
@@ -336,11 +399,25 @@ export default function App() {
         </TouchableOpacity>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.loginButton} onPress={signInWithEmailPassword} disabled={isLoading}>
+          <TouchableOpacity 
+            style={styles.loginButton} 
+            onPress={() => {
+              console.log("Login button pressed");
+              signInWithEmailPassword();
+            }} 
+            disabled={isLoading}
+          >
             <Text style={styles.loginText}>{isLoading ? "Processing..." : "Login"}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.signupButton} onPress={signUpWithEmailPassword} disabled={isLoading}>
+          <TouchableOpacity 
+            style={styles.signupButton} 
+            onPress={() => {
+              console.log("Sign up button pressed");
+              signUpWithEmailPassword();
+            }} 
+            disabled={isLoading}
+          >
             <Text style={styles.signupText}>{isLoading ? "Processing..." : "Sign Up"}</Text>
           </TouchableOpacity>
         </View>
@@ -349,7 +426,10 @@ export default function App() {
 
         <TouchableOpacity
           style={styles.googleButton}
-          onPress={signInWithGoogle}
+          onPress={() => {
+            console.log("Google sign in button pressed");
+            signInWithGoogle();
+          }}
           disabled={isLoading}
         >
           <Image source={require("./assets/google_icon.png")} style={styles.googleLogo}></Image>
