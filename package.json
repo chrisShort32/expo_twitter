@@ -14,7 +14,7 @@
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-google-signin/google-signin": "^13.2.0",
-    "expo": "^52.0.38",
+    "expo": "^52.0.40",
     "expo-auth-session": "~6.0.3",
     "expo-crypto": "~14.0.2",
     "expo-dev-client": "~5.0.14",
