@@ -69,7 +69,7 @@ const LoginScreen = ({ navigation }) => {
       };
       
      const response = await register(userData);
-     console.log("This is the userData: ", userData);
+     console.log("This is the userData: ", JSON.stringify(userData));
      if (response.error) {
       console.error("Failed to register or sign in:", response.error);
       return;
