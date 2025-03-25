@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Simulate API requests with AsyncStorage
-// In a real app, these would be HTTP requests to your backend
+const API_BASE_URL = 'http://54.147.244.63:8000/api';
 
 /**
  * Login a user with email and password
@@ -11,41 +10,39 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export const loginUser = async (email, password) => {
   try {
-    // Simulate API request delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Get users from "database"
-    const storedUsers = await AsyncStorage.getItem("emailUsers");
-    const users = storedUsers ? JSON.parse(storedUsers) : {};
-    
-    // Check if credentials are valid
-    if (users[email] && users[email].password === password) {
-      // Create user session
-      const userData = {
-        id: users[email].id || Date.now().toString(),
-        name: users[email].name || email.split('@')[0],
-        email: email,
-        auth_type: "email",
-        token: `token-${Date.now()}`, // Simulate JWT token
-      };
-      
-      // Store user session
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
-      
-      return { success: true, user: userData };
+     console.log('Request body:', JSON.stringify({ email, password }));
+     await AsyncStorage.removeItem('user');
+    // Make HTTP request for login
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+       method: 'POST',
+       headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.access) {
+        const { access, user } = data;
+
+        const userData = {
+            id: user.id,
+            name: `${user.first_name} ${user.last_name}`,
+            email: user.email,
+            auth_type: 'email',
+            token: access, // use token returned from server
+        };
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+       return { success: true, user: userData };
+    }  else {
+       return { success: false, error: 'Invalid Credentials' };
     }
-    
-    return { 
-      success: false, 
-      error: "Invalid email or password" 
-    };
   } catch (error) {
-    console.error("Login API error:", error);
-    return { 
-      success: false, 
-      error: "An error occurred during login" 
-    };
-  }
+    console.error('Login API error:', error);
+    return {success: false, error: 'An error occurred during login'};
+  }  
 };
 
 /**
@@ -55,56 +52,41 @@ export const loginUser = async (email, password) => {
  */
 export const registerUser = async (userData) => {
   try {
-    // Simulate API request delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const { email, password, first_name, last_name } = userData;
     
-    const { email, password, name } = userData;
+    // Send reg data to backend
+    const response = await fetch(`${API_BASE_URL}/auth/registration/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, first_name, last_name}),
+    });
     
-    // Get existing users
-    const storedUsers = await AsyncStorage.getItem("emailUsers");
-    const users = storedUsers ? JSON.parse(storedUsers) : {};
+    const data = await response.json();
+
+    if (response.ok && data.access) {
+        const { access, user } = data;
     
-    // Check if user already exists
-    if (users[email]) {
-      return { 
-        success: false, 
-        error: "Email already registered" 
-      };
+        // Store user session in Async
+        const newUserData = {
+            id: user.id,
+            name: `${first_name} ${last_name}`,
+	    email: user.email,
+	    auth_type: 'email',
+            token: access, // Use token returned from server
+        };
+        await AsyncStorage.setItem('user', JSON.stringify(newUserData));
+
+        return { success: true, user: newUserData };
+    }   else {
+	return { success: false, error: 'Registration Failed' };
     }
-    
-    // Create new user
-    const userId = Date.now().toString();
-    users[email] = {
-      id: userId,
-      password,
-      name: name || email.split('@')[0],
-      created_at: new Date().toISOString()
-    };
-    
-    // Save to "database"
-    await AsyncStorage.setItem("emailUsers", JSON.stringify(users));
-    
-    // Create session for new user
-    const newUserData = {
-      id: userId,
-      name: users[email].name,
-      email,
-      auth_type: "email",
-      token: `token-${Date.now()}`, // Simulate JWT token
-    };
-    
-    // Store user session
-    await AsyncStorage.setItem("user", JSON.stringify(newUserData));
-    
-    return { success: true, user: newUserData };
   } catch (error) {
-    console.error("Registration API error:", error);
-    return { 
-      success: false, 
-      error: "An error occurred during registration" 
-    };
+    console.error('Registration API error:', error);
+    return { success: false, error: 'An error occurred during registration' };
   }
-};
+}; 
 
 /**
  * Reset a user's password
@@ -113,40 +95,26 @@ export const registerUser = async (userData) => {
  */
 export const resetPassword = async (email) => {
   try {
-    // Simulate API request delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Get users from "database"
-    const storedUsers = await AsyncStorage.getItem("emailUsers");
-    const users = storedUsers ? JSON.parse(storedUsers) : {};
-    
-    // Check if email exists
-    if (!users[email]) {
-      return { 
-        success: false, 
-        error: "No account found with this email" 
-      };
-    }
-    
-    // In a real app, we would send an email with a reset link
-    // For demo purposes, we'll reset the password to a default value
-    const newPassword = "resetpass";
-    users[email].password = newPassword;
-    
-    // Save to "database"
-    await AsyncStorage.setItem("emailUsers", JSON.stringify(users));
-    
-    return { 
-      success: true, 
-      message: `Password has been reset to: ${newPassword}` 
-    };
-  } catch (error) {
-    console.error("Password reset API error:", error);
-    return { 
-      success: false, 
-      error: "An error occurred during password reset" 
-    };
-  }
+    // Send request to reset password
+    const respnse = await fetch(`${API_BASE_URL}/auth/password/reset`, {
+        method: 'POST',
+        headers: {
+            'Content_Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+    });
+
+   const data = await response.json();
+
+   if (response.ok && data.success) {
+       return { success: true, message: 'Password reset email sent' };
+   } else {
+       return { success: false, error: 'No account found with this email' };
+   } 
+ } catch (error) {
+   console.error('Password reset API error', error);
+   return {success: false, error: 'An error occurred during password reset' };
+ }
 };
 
 /**
