@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation }) => {
-  const { login, register, resetPassword, isLoading } = useAuth();
+  const { login, register, signInWithGoogle, resetPassword, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,15 +68,7 @@ const LoginScreen = ({ navigation }) => {
         picture: userInfo.picture
       };
       
-     const response = await register(userData);
-     console.log("This is the userData: ", JSON.stringify(userData));
-     if (response.error) {
-      console.error("Failed to register or sign in:", response.error);
-      return;
-     }
-      console.log("User signed in successfully");
-      navigation.navigate('Home')
-      // Navigate to home screen is done automatically via the AuthContext
+      const result = await signInWithGoogle(userData);
     } catch (error) {
       console.error("Google sign in error:", error);
     }

@@ -45,6 +45,27 @@ export const loginUser = async (email, password) => {
   }  
 };
 
+export const googleSignIn = async (userData) => {
+      // Check if user exists
+      const checkResponse = await fetch("http://54.147.244.63:8000/check_user/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email: userData.email }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if(checkData.exists) {
+        console.log("User exists, Proceeding with login...");
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        return {success: true, user: userData};
+        
+      } else {
+        console.log(`No account exists with the email ${userInfo.email}`);
+        return {success: false, error: "An error occurred during google sign in"};
+      }
+};
+
 /**
  * Register a new user
  * @param {Object} userData - User registration data
@@ -52,7 +73,7 @@ export const loginUser = async (email, password) => {
  */
 export const registerUser = async (userData) => {
   try {
-    const { email, password, first_name, last_name } = userData;
+    const { email, password, first_name, last_name, username } = userData;
     
     // Send reg data to backend
     const response = await fetch(`${API_BASE_URL}/auth/registration/`, {
@@ -60,7 +81,7 @@ export const registerUser = async (userData) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, first_name, last_name}),
+        body: JSON.stringify({ email, password, first_name, last_name, username}),
     });
     
     const data = await response.json();
@@ -72,8 +93,8 @@ export const registerUser = async (userData) => {
         const newUserData = {
             id: user.id,
             name: `${first_name} ${last_name}`,
-	    email: user.email,
-	    auth_type: 'email',
+	          email: user.email,
+	          auth_type: 'email',
             token: access, // Use token returned from server
         };
         await AsyncStorage.setItem('user', JSON.stringify(newUserData));
