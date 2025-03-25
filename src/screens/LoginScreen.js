@@ -68,10 +68,14 @@ const LoginScreen = ({ navigation }) => {
         picture: userInfo.picture
       };
       
-      // Here you'd typically send this to your backend to handle the Google auth
-      // For now, we'll just store it in AsyncStorage via our API
-      await register(userData);
-      
+     const response = await register(userData);
+     console.log("This is the userData: ", userData);
+     if (response.error) {
+      console.error("Failed to register or sign in:", response.error);
+      return;
+     }
+      console.log("User signed in successfully");
+      navigation.navigate('Home')
       // Navigate to home screen is done automatically via the AuthContext
     } catch (error) {
       console.error("Google sign in error:", error);
