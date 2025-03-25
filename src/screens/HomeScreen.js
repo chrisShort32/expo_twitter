@@ -22,9 +22,9 @@ const HomeScreen = () => {
   const tweets = [
     {
       id: '1',
-      author: 'Twitter Official',
-      handle: '@Twitter',
-      content: "Welcome to Twitter! This is where you'll see the latest Tweets from the people and topics you follow.",
+      author: 'Y Official',
+      handle: '@y',
+      content: "Welcome to Y we are much better than X (Twitter)! This is where you'll see the latest Tweets from the people and topics you follow.",
       timestamp: '2h',
       likes: 1205,
       retweets: 342,
@@ -34,7 +34,7 @@ const HomeScreen = () => {
       id: '2',
       author: 'Elon Musk',
       handle: '@elonmusk',
-      content: 'Excited to announce the latest Tesla update. More features, more fun!',
+      content: 'Excited to announce that Y is better than X!',
       timestamp: '5h',
       likes: 45600,
       retweets: 8932,
