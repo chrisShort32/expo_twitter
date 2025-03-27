@@ -126,10 +126,13 @@ export const AuthProvider = ({ children }) => {
 
   // Google sign in (we'll keep using the existing implementation)
   const signInWithGoogle = async (userData) => {
-    await authApi.googleSignIn(userData);
+    const result = await authApi.googleSignIn(userData);
     setUser(userData);
     setIsAuthenticated(true);
     setIsLoading(false);
+    if (!result.success){
+      return {success: false}; 
+    }
     // Implementation will be handled in the Login screen
     // because it requires Expo's auth session hooks
   };

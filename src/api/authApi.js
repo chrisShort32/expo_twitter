@@ -61,8 +61,8 @@ export const googleSignIn = async (userData) => {
         return {success: true, user: userData};
         
       } else {
-        console.log(`No account exists with the email ${userInfo.email}`);
-        return {success: false, error: "An error occurred during google sign in"};
+        console.log(`No account exists with the email ${userData.email}`);
+        return {success: false, user: userData};
       }
 };
 

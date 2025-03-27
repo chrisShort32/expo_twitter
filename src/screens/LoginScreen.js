@@ -58,17 +58,29 @@ const LoginScreen = ({ navigation }) => {
       }
       
       const userInfo = await userInfoResponse.json();
-      
+      console.log("userInfo: ", JSON.stringify(userInfo));
       // Create or sign in the user
       const userData = {
         name: userInfo.name,
         email: userInfo.email,
+        username: userInfo.family_name + "." + userInfo.given_name + "27",
+        password1: "lmao-this-is-not-a-good-solution",
+        password2: "lmao-this-is-not-a-good-solution",
         auth_type: "google",
         googleId: userInfo.id,
         picture: userInfo.picture
       };
       
       const result = await signInWithGoogle(userData);
+      if (result.success)
+      {
+        // do nothing 
+      }
+      else {
+        console.log(`Creating account for email: ${userData.email}`);
+        const registered = await register(userData);
+        console.log("registered: ", JSON.stringify(registered));
+      }
     } catch (error) {
       console.error("Google sign in error:", error);
     }
@@ -212,7 +224,7 @@ const LoginScreen = ({ navigation }) => {
         <Image source={require("../../assets/y_logo.png")} style={styles.image} />
         
         <Text style={styles.titleText}>
-          {isSignUp ? "Create your account" : "Log in to Twitter"}
+          {isSignUp ? "Create your account" : "Log in to Y"}
         </Text>
         
         <View style={styles.inputView}>
