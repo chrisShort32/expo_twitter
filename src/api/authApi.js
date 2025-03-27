@@ -73,15 +73,16 @@ export const googleSignIn = async (userData) => {
  */
 export const registerUser = async (userData) => {
   try {
-    const { email, password, first_name, last_name, username } = userData;
-    
+    const { email, password1, password2, username } = userData;
+    console.log("user data: ", JSON.stringify(userData));  
     // Send reg data to backend
     const response = await fetch(`${API_BASE_URL}/auth/registration/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, first_name, last_name, username}),
+        body: JSON.stringify({ username, email, password1, password2}),
+  
     });
     
     const data = await response.json();
@@ -92,7 +93,7 @@ export const registerUser = async (userData) => {
         // Store user session in Async
         const newUserData = {
             id: user.id,
-            name: `${first_name} ${last_name}`,
+            username: user.username,
 	          email: user.email,
 	          auth_type: 'email',
             token: access, // Use token returned from server

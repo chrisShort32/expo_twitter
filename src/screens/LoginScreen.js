@@ -21,8 +21,8 @@ const LoginScreen = ({ navigation }) => {
   const { login, register, signInWithGoogle, resetPassword, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password1, setPassword] = useState('');
+  const [password2, setConfirmPassword] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   
   const [isSignUp, setIsSignUp] = useState(false);
@@ -75,40 +75,44 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email || !password1) {
       alert("Please enter both email and password");
       return;
     }
     
-    const result = await login(email, password);
+    const result = await login(email, password1);
     
     if (result.success) {
       // Navigation will be handled by AuthContext
       setEmail('');
       setPassword('');
     }
+    else {
+      alert("Incorrect email or password!");
+    }
   };
 
   const handleSignUp = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password1 || !password2) {
       alert("Please fill in all fields");
       return;
     }
     
-    if (password !== confirmPassword) {
+    if (password1 !== password2) {
       alert("Passwords do not match");
       return;
     }
     
-    if (password.length < 6) {
+    if (password1.length < 6) {
       alert("Password must be at least 6 characters long");
       return;
     }
     
     const userData = {
       email,
-      password,
-      name: email.split('@')[0] // Simple way to extract a name from email
+      password1,
+      password2,
+      username: email.split('@')[0] // Simple way to extract a name from email
     };
     
     const result = await register(userData);
@@ -228,7 +232,7 @@ const LoginScreen = ({ navigation }) => {
             style={styles.textInput}
             placeholder="Password"
             placeholderTextColor="#657786"
-            value={password}
+            value={password1}
             onChangeText={setPassword}
             secureTextEntry
           />
@@ -240,7 +244,7 @@ const LoginScreen = ({ navigation }) => {
               style={styles.textInput}
               placeholder="Confirm Password"
               placeholderTextColor="#657786"
-              value={confirmPassword}
+              value={password2}
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
