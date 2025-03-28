@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return { success: true };
       } else {
-        Alert.alert('Registration Failed', result.error);
+        //Alert.alert('Registration Failed', result.error);
         return { success: false, error: result.error };
       }
     } catch (error) {
